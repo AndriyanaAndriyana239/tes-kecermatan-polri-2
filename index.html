@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Tes Kecermatan POLRI</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:Arial, sans-serif;
+      background:#f9fafb;color:#111827;
+      display:flex;min-height:100vh;
+    }
+
+    /* SIDEBAR */
+    .sidebar{
+      width:230px;background:#f9fafb;border-right:1px solid #e5e7eb;
+      padding:18px 16px;
+    }
+    .sidebar h2{font-size:18px;margin-bottom:20px;}
+    .sidebar ul{list-style:none;font-size:14px;}
+    .sidebar li{margin-bottom:6px;}
+    .sidebar a{
+      text-decoration:none;color:#4b5563;padding:6px 8px;border-radius:6px;
+      display:block;
+    }
+    .sidebar a.active{background:#eef2ff;color:#4f46e5;font-weight:600;}
+
+    /* KONTEN UMUM */
+    .content{flex:1;padding:20px 24px;}
+    .card{
+      background:#ffffff;border-radius:8px;border:1px solid #e5e7eb;
+      padding:18px 20px;margin-bottom:18px;
+    }
+    .card h3{font-size:16px;margin-bottom:12px;}
+
+    /* --- TAMPILAN UJIAN --- */
+    .test-box{
+      background:#ffffff;border-radius:8px;border:1px solid #e5e7eb;
+      padding:20px 24px;min-height:420px;
+    }
+    .timer-top{
+      text-align:center;font-size:20px;font-weight:bold;margin-bottom:16px;
+    }
+    .timer-top span{font-family:monospace;}
+    .kolom-title{
+      text-align:center;font-size:18px;font-weight:bold;margin-bottom:4px;
+    }
+    .info-soal{
+      text-align:center;font-size:13px;color:#6b7280;margin-bottom:10px;
+    }
+
+    .grid-wrapper{
+      border:2px solid #111827;
+      display:grid;
+      grid-template-rows:auto 40px;
+      margin:0 auto 30px;
+      max-width:800px;
+    }
+    .grid-symbols{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+    }
+    .cell{
+      border-right:2px solid #111827;
+      display:flex;align-items:center;justify-content:center;
+      font-size:40px;font-weight:bold;height:90px;
+    }
+    .cell:last-child{border-right:none;}
+    .grid-labels{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      border-top:2px solid #111827;
+    }
+    .label-cell{
+      border-right:2px solid #111827;
+      display:flex;align-items:center;justify-content:center;
+      font-size:18px;font-weight:bold;
+    }
+    .label-cell:last-child{border-right:none;}
+
+    .missing-row{
+      display:flex;justify-content:center;gap:14px;margin-bottom:20px;
+    }
+    .missing-cell{
+      width:80px;height:80px;border:2px solid #111827;
+      display:flex;align-items:center;justify-content:center;
+      font-size:36px;font-weight:bold;
+    }
+
+    .answers-row{
+      display:flex;justify-content:center;gap:16px;
+    }
+    .answer-btn{
+      min-width:90px;padding:10px 0;border-radius:6px;
+      border:2px solid #d1d5db;background:#ffffff;
+      font-size:20px;font-weight:bold;cursor:pointer;text-align:center;
+    }
+    .answer-btn:hover{background:#e5e7ff;border-color:#4f46e5;}
+    .answer-btn.selected{background:#4f46e5;color:#ffffff;border-color:#4f46e5;}
+
+    /* --- TAMPILAN HASIL --- */
+    table{
+      width:100%;border-collapse:collapse;font-size:13px;
+    }
+    thead{background:#4f46e5;color:#ffffff;}
+    th,td{
+      padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:left;
+    }
+    tbody tr:nth-child(even){background:#f3f4ff;}
+    .btn-small{
+      padding:5px 10px;border-radius:4px;border:none;
+      background:#2563eb;color:#fff;font-size:12px;cursor:pointer;
+    }
+    .btn-small:hover{background:#1d4ed8;}
+
+    #detailSection{margin-top:16px;}
+    .indicators{
+      display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:13px;
+    }
+    .indicator-card{
+      flex:1 1 180px;
+      border-radius:6px;border:1px solid #e5e7eb;
+      padding:8px 10px;background:#f9fafb;
+    }
+    .indicator-card strong{display:block;font-size:12px;margin-bottom:4px;}
+    .indicator-card span{font-size:14px;font-weight:bold;}
+    .indicator-card p{font-size:11px;color:#6b7280;margin-top:3px;}
+  </style>
+</head>
+<body>
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <h2>TesKecermatan</h2>
+    <ul>
+      <li><a href="#">Profil</a></li>
+      <li><a href="#" class="active" id="menuTes">Tes Kecermatan</a></li>
+      <li><a href="#" id="menuRiwayat">Riwayat Tes</a></li>
+      <li><a href="login_peserta_polri.html">Log Out</a></li>
+    </ul>
+  </aside>
+
+  <!-- KONTEN -->
+  <main class="content">
+    <!-- ====== BAGIAN UJIAN ====== -->
+    <section id="sectionTest">
+      <div class="test-box">
+        <div class="timer-top"><span id="timer">01:00</span></div>
+        <div class="kolom-title" id="kolomTitle">Kolom 1</div>
+        <div class="info-soal" id="infoSoal">Soal 1 dari 50</div>
+
+        <div class="grid-wrapper">
+          <div class="grid-symbols" id="gridSymbols"></div>
+          <div class="grid-labels">
+            <div class="label-cell">A</div>
+            <div class="label-cell">B</div>
+            <div class="label-cell">C</div>
+            <div class="label-cell">D</div>
+            <div class="label-cell">E</div>
+          </div>
+        </div>
+
+        <div class="missing-row" id="missingRow"></div>
+
+        <div class="answers-row">
+          <div class="answer-btn" data-choice="A">A</div>
+          <div class="answer-btn" data-choice="B">B</div>
+          <div class="answer-btn" data-choice="C">C</div>
+          <div class="answer-btn" data-choice="D">D</div>
+          <div class="answer-btn" data-choice="E">E</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== BAGIAN HASIL / RIWAYAT ====== -->
+    <section id="sectionResult" style="display:none;">
+      <section class="card">
+        <h3>Riwayat Tes Kecermatan</h3>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:50px;">No</th>
+              <th>Tanggal Tes</th>
+              <th style="width:150px;">Indeks Kecermatan (%)</th>
+              <th style="width:120px;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </section>
+
+      <section class="card" id="detailSection">
+        <h3>Detail Tes Kecermatan</h3>
+        <canvas id="kolomChart" height="120"></canvas>
+
+        <div class="indicators">
+          <div class="indicator-card">
+            <strong>Kecepatan Kerja</strong>
+            <span id="speedValue">-</span>
+            <p id="speedDesc">Butir per menit.</p>
+          </div>
+          <div class="indicator-card">
+            <strong>Ketepatan Kerja</strong>
+            <span id="accuracyValue">-</span>
+            <p id="accuracyDesc">Persentase jawaban benar.</p>
+          </div>
+          <div class="indicator-card">
+            <strong>Ketahanan Kerja</strong>
+            <span id="enduranceValue">-</span>
+            <p id="enduranceDesc">Perbandingan kolom akhir dengan kolom awal.</p>
+          </div>
+          <div class="indicator-card">
+            <strong>Stabilitas Kerja</strong>
+            <span id="stabilityValue">-</span>
+            <p id="stabilityDesc">Simpangan akurasi antar kolom.</p>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+<script>
+  // =================== BAGIAN UJIAN ===================
+
+  const JUMLAH_KOLOM    = 10;
+  const SOAL_PER_KOLOM  = 50;
+  const DETIK_PER_KOLOM = 60;
+
+// Kumpulan karakter Cina yang mirip-mirip
+// Anda bebas mengganti/menambah sesuai kebutuhan.
+const greek = "三星土士干千大犬太夫失天夫未末本禾王玉田由申甲电白目日曰口囗回因田由甲申目且世丘丑丘丹旦旦且书与万丈丁下上个中内内目日曰贝见见贝未末本末术村林森口囚四国园因团回图围固固国囯囗";
+;
+
+  function sampleUnique(set, len){
+    const arr = set.split('');
+    const out = [];
+    for(let i=0;i<len && arr.length>0;i++){
+      const idx = Math.floor(Math.random()*arr.length);
+      out.push(arr[idx]);
+      arr.splice(idx,1);
+    }
+    return out;
+  }
+
+  const columns = [];
+  for(let k=0;k<JUMLAH_KOLOM;k++){
+    const questions = [];
+    for(let q=0;q<SOAL_PER_KOLOM;q++){
+      const topSyms = sampleUnique(greek,5);
+      const missingIndex = Math.floor(Math.random()*topSyms.length);
+      const missingSymbol = topSyms[missingIndex];
+      const optionLabels = ["A","B","C","D","E"];
+      const correctChoice = optionLabels[missingIndex];
+      const bottomSyms = topSyms.slice();
+      bottomSyms.splice(missingIndex,1);
+      questions.push({
+        symbolsTop: topSyms,
+        bottom: bottomSyms,
+        missing: missingSymbol,
+        correct: correctChoice
+      });
+    }
+    columns.push({questions, benar:0, salah:0});
+  }
+
+  const gridSymbolsEl = document.getElementById('gridSymbols');
+  const missingRowEl  = document.getElementById('missingRow');
+  const kolomTitleEl  = document.getElementById('kolomTitle');
+  const timerEl       = document.getElementById('timer');
+  const infoSoalEl    = document.getElementById('infoSoal');
+  const answerBtns    = document.querySelectorAll('.answer-btn');
+
+  let currentCol = 0;
+  let currentQ  = 0;
+  let timeLeft  = DETIK_PER_KOLOM;
+  let timerInterval = null;
+
+  function shuffleArray(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+
+  function renderQuestion(){
+    const colData = columns[currentCol];
+    const qData   = colData.questions[currentQ];
+
+    kolomTitleEl.textContent = "Kolom " + (currentCol+1);
+    infoSoalEl.textContent   = "Soal " + (currentQ+1) + " dari " + SOAL_PER_KOLOM;
+
+    gridSymbolsEl.innerHTML = "";
+    qData.symbolsTop.forEach(sym=>{
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.textContent = sym;
+      gridSymbolsEl.appendChild(cell);
+    });
+
+    missingRowEl.innerHTML = "";
+    const shuffledBottom = shuffleArray(qData.bottom);
+    shuffledBottom.forEach(sym=>{
+      const div = document.createElement('div');
+      div.className = 'missing-cell';
+      div.textContent = sym;
+      missingRowEl.appendChild(div);
+    });
+
+    answerBtns.forEach(btn=>btn.classList.remove('selected'));
+  }
+
+  function startTimer(){
+    timeLeft = DETIK_PER_KOLOM;
+    updateTimer();
+    if(timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(()=>{
+      timeLeft--;
+      updateTimer();
+      if(timeLeft <= 0){
+        clearInterval(timerInterval);
+        nextColumn();
+      }
+    },1000);
+  }
+
+  function updateTimer(){
+    const m = String(Math.floor(timeLeft/60)).padStart(2,'0');
+    const s = String(timeLeft%60).padStart(2,'0');
+    timerEl.textContent = `${m}:${s}`;
+  }
+
+  function nextQuestionOrColumn(){
+    currentQ++;
+    if(currentQ >= SOAL_PER_KOLOM){
+      nextColumn();
+    }else{
+      renderQuestion();
+    }
+  }
+
+  function nextColumn(){
+    currentCol++;
+    currentQ = 0;
+    if(currentCol >= JUMLAH_KOLOM){
+      finishTest();
+      return;
+    }
+    startTimer();
+    renderQuestion();
+  }
+
+  function finishTest(){
+    if(timerInterval) clearInterval(timerInterval);
+    timerEl.textContent = "00:00";
+
+    const benarPerKolom = [];
+    const totalPerKolom = [];
+    let totalBenar = 0;
+    let totalSalah = 0;
+
+    columns.forEach((col)=>{
+      const dikerjakan = col.benar + col.salah;
+      benarPerKolom.push(col.benar);
+      totalPerKolom.push(dikerjakan); // jumlah soal yang benar+ salah pada kolom tsb
+      totalBenar += col.benar;
+      totalSalah += col.salah;
+    });
+
+    const totalSoalDikerjakan = totalPerKolom.reduce((a,b)=>a+b,0);
+
+    resultFromTest = {
+      benar: benarPerKolom,
+      total: totalPerKolom,
+      durasiMenit: JUMLAH_KOLOM * (DETIK_PER_KOLOM/60),
+      totalBenar,
+      totalSalah
+    };
+
+    // komposit akan dihitung di showDetail, lalu dipakai di tabel
+    document.getElementById('sectionTest').style.display   = 'none';
+    document.getElementById('sectionResult').style.display = 'block';
+    document.getElementById('menuTes').classList.remove('active');
+    document.getElementById('menuRiwayat').classList.add('active');
+
+    // hitung detail (termasuk komposit) dan isi tabel
+    showDetail(true);
+  }
+
+  answerBtns.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const choice = btn.dataset.choice;
+      const colData = columns[currentCol];
+      const qData   = colData.questions[currentQ];
+
+      answerBtns.forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+
+      if(choice === qData.correct){
+        colData.benar++;
+      }else{
+        colData.salah++;
+      }
+
+      setTimeout(()=>{ nextQuestionOrColumn(); },150);
+    });
+  });
+
+  startTimer();
+  renderQuestion();
+
+  // =================== BAGIAN HASIL ===================
+
+  let resultFromTest = null;
+  let kolomChart = null;
+  let lastComposite = 0;
+
+  function showDetail(fromFinish = false){
+    if(!resultFromTest) return;
+    const data = resultFromTest;
+
+    const labels = [];
+    const benarPerKolom = [];
+    const akurasiPerKolom = [];
+    for(let i=0;i<data.benar.length;i++){
+      labels.push('Kolom ' + (i+1));
+      benarPerKolom.push(data.benar[i]);
+      akurasiPerKolom.push(
+        data.total[i] === 0 ? 0 : data.benar[i] / data.total[i]
+      );
+    }
+
+    const totalDikerjakan = data.total.reduce((a,b)=>a+b,0);
+    const totalBenar = data.totalBenar;
+    const speed = totalDikerjakan === 0 ? 0 : totalDikerjakan / data.durasiMenit;
+    const accuracy = totalDikerjakan === 0 ? 0 : totalBenar / totalDikerjakan;
+
+    const avgAwal  = (data.benar[0] + data.benar[1] + data.benar[2]) / 3;
+    const avgAkhir = (data.benar[7] + data.benar[8] + data.benar[9]) / 3;
+    const enduranceIndex = avgAwal === 0 ? 0 : avgAkhir / avgAwal;
+
+    const meanAcc = akurasiPerKolom.reduce((a,b)=>a+b,0) / akurasiPerKolom.length;
+    const varAcc  = akurasiPerKolom.reduce((sum,a)=>sum + Math.pow(a-meanAcc,2),0) / akurasiPerKolom.length;
+    const sdAcc   = Math.sqrt(varAcc);
+
+    // ----- Normalisasi indikator ke 0–100 -----
+
+    // Kecepatan: batas realistis
+    const maxSpeed = 30; // >=30 butir/menit dianggap 100
+    const minSpeed = 15; // <=15 dianggap 0
+    let speedScore = (speed - minSpeed) / (maxSpeed - minSpeed) * 100;
+    speedScore = Math.max(0, Math.min(100, speedScore));
+
+    // Ketepatan = akurasi × 100
+    let accuracyScore = accuracy * 100;
+    accuracyScore = Math.max(0, Math.min(100, accuracyScore));
+
+    // Ketahanan: 0.6–1.0
+    const maxEndurance = 1.0;
+    const minEndurance = 0.6;
+    let enduranceScore = (enduranceIndex - minEndurance) / (maxEndurance - minEndurance) * 100;
+    enduranceScore = Math.max(0, Math.min(100, enduranceScore));
+
+    // Stabilitas: sdAcc kecil bagus
+    const maxSd = 0.15;
+    const minSd = 0.03;
+    let stabilityScore = (maxSd - sdAcc) / (maxSd - minSd) * 100;
+    stabilityScore = Math.max(0, Math.min(100, stabilityScore));
+
+    // ----- Komposit baru: Akurasi 70%, lainnya 10% -----
+const composite =
+  speedScore     * 0.10 +  // kecepatan kerja 10%
+  accuracyScore  * 0.70 +  // ketepatan kerja 70%
+  enduranceScore * 0.10 +  // ketahanan kerja 10%
+  stabilityScore * 0.10;   // stabilitas kerja 10%
+
+
+    // ----- Update tampilan indikator -----
+    document.getElementById('speedValue').textContent     = speed.toFixed(1) + ' butir/menit';
+    document.getElementById('accuracyValue').textContent  = accuracyScore.toFixed(1) + ' %';
+    document.getElementById('enduranceValue').textContent = enduranceIndex.toFixed(2);
+    document.getElementById('stabilityValue').textContent = stabilityScore.toFixed(1) + ' %';
+
+    document.getElementById('speedDesc').textContent =
+      speed >= 30 ? 'Kecepatan kerja baik.' :
+      speed >= 22 ? 'Kecepatan kerja cukup.' :
+                    'Kecepatan kerja perlu ditingkatkan.';
+
+    document.getElementById('accuracyDesc').textContent =
+      accuracyScore >= 85 ? 'Ketepatan sangat baik.' :
+      accuracyScore >= 70 ? 'Ketepatan cukup.' :
+                             'Ketepatan rendah, banyak kesalahan.';
+
+    document.getElementById('enduranceDesc').textContent =
+      enduranceIndex >= 0.90 ? 'Ketahanan kerja baik hingga kolom akhir.' :
+      enduranceIndex >= 0.75 ? 'Ada penurunan ringan di kolom akhir.' :
+                               'Ketahanan kerja menurun cukup tajam.';
+
+    document.getElementById('stabilityDesc').textContent =
+      sdAcc <= 0.07 ? 'Stabilitas akurasi antar kolom baik.' :
+      sdAcc <= 0.12 ? 'Stabilitas sedang, beberapa kolom naik turun.' :
+                      'Stabilitas rendah, akurasi sangat fluktuatif.';
+
+    // ----- Grafik -----
+    const ctx = document.getElementById('kolomChart').getContext('2d');
+    if(kolomChart){ kolomChart.destroy(); }
+
+    kolomChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Jumlah Benar per Kolom',
+          data: benarPerKolom,
+          backgroundColor: '#4f46e5'
+        }]
+      },
+      options: {
+        responsive:true,
+        scales:{
+          y:{beginAtZero:true,title:{display:true,text:'Jumlah Benar'}}
+        },
+        plugins:{
+          tooltip:{
+            callbacks:{
+              label: function(context){
+                const idx  = context.dataIndex;
+                const benar = data.benar[idx];
+                const total = data.total[idx];
+                const acc   = akurasiPerKolom[idx]*100;
+                return ` Benar ${benar} dari ${total} (Akurasi ${acc.toFixed(1)}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // jika dipanggil saat tes selesai, isi tabel riwayat
+    if(fromFinish){
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = "";
+      const tr = document.createElement('tr');
+      const now = new Date();
+      const tanggal = now.toLocaleDateString('id-ID') + " " +
+                      now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+      tr.innerHTML = `
+        <td>1</td>
+        <td>${tanggal}</td>
+        <td>${composite.toFixed(2)} %</td>
+        <td><button class="btn-small" onclick="showDetail()">Lihat Detail</button></td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }
+</script>
+</body>
+</html>
